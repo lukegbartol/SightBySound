@@ -60,8 +60,10 @@ right = lfilter(hrtf[:,1], 1.0, mono_sound)
 result = np.array([left, right]).T.astype(np.int16)
 # save as a wav
 wavfile.write('out.wav', rate, result)
-oname = os.path.join(outputdir, inputname + "-" + 'a%d' % azimuth + 'e' + elevation)
 
+check_call(['play', 'out.wav']) 
+
+oname = os.path.join(outputdir, inputname + "-" + 'a%d' % azimuth + 'e' + elevation)
 # encode to ogg and mp3
 check_call(['sox', 'out.wav', oname + '.mp3'])
 # swap the left and right channels for the negative angle
