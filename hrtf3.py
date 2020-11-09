@@ -28,17 +28,38 @@ def readHRTF(name):
     r = (r[0::2,:] + r[1::2,:]) / 65536
     return r
 
+def intround(x, base):
+    return round(base * round(x/base))
+
 # run as python hrtf.py infile outdir
 if len(sys.argv) < 4:
-    print ('usage: python3 hrtf3.py inputfile azimuth elevation')
+    print ('usage: python3 hrtf3.py inputfile elevation azimuth')
     sys.exit(1)
 
 inputfile = sys.argv[1]
 inputname = inputfile[:-4]
-az = sys.argv[2]
-azimuth = int(az)
 
-elevation = sys.argv[3]
+
+elevation = intround(int(sys.argv[2]),10)
+if elevation < -40 or elevation > 90:
+    print ('elevation must be between -40 and 90')
+
+
+azdiff = [5,5,5,6,6.43,8,10,15,30,1]
+
+increment = azdiff[int(abs(elevation)/10)]
+
+
+
+azimuth = intround(int(sys.argv[3]),increment)
+
+
+
+print( azimuth)
+print( elevation)
+print(increment)
+
+
 outputdir = "output"
 if not os.path.exists(outputdir):
     os.mkdir(outputdir)
@@ -52,7 +73,19 @@ rate, mono_sound = wavfile.read(open('input.wav', 'rb'))
 # remove that tmp file
 os.remove('input.wav')
 
-hrtf = readHRTF(os.path.join('compact', 'elev0', 'H0e%03da.dat' % azimuth))
+
+
+elevationstr = str(elevation)
+
+if azimuth == 0:
+    azimuthstr = '000'
+elif azimuth < 100:
+    azimuthstr = '0' + str(azimuth)
+else: 
+    azimuthstr = str(azimuth)
+
+
+hrtf = readHRTF(os.path.join('compact', 'elev' + elevationstr, 'H' + elevationstr + 'e' + azimuthstr + 'a.dat'))
 # apply the filter
 left = lfilter(hrtf[:,0], 1.0, mono_sound)
 right = lfilter(hrtf[:,1], 1.0, mono_sound)
@@ -63,7 +96,7 @@ wavfile.write('out.wav', rate, result)
 
 check_call(['play', 'out.wav']) 
 
-oname = os.path.join(outputdir, inputname + "-" + 'a%d' % azimuth + 'e' + elevation)
+oname = os.path.join(outputdir, inputname + "_" + elevationstr + 'e' + azimuthstr + 'a')
 # encode to ogg and mp3
 check_call(['sox', 'out.wav', oname + '.mp3'])
 # swap the left and right channels for the negative angle
